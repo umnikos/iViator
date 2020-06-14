@@ -1,5 +1,6 @@
 import sqlite3
 import hashlib
+import threading
 
 def hash_password(password):
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
@@ -7,7 +8,7 @@ def hash_password(password):
 class DB:
     def __init__(self, db_name='database.sqlite3'):
         self.db_name = db_name
-        self.conn = sqlite3.connect(db_name)
+        self.conn = sqlite3.connect(db_name, check_same_thread=False)
         self.conn.cursor().execute('''
         CREATE TABLE IF NOT EXISTS `users` (
             `uid` INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -16,28 +17,31 @@ class DB:
             `password` TEXT NOT NULL
         )''')
         self.conn.commit()
-        self.conn.close()
+        self.conn_lock = threading.Lock()
 
     def sql_select1(self, query, params):
-        self.conn = sqlite3.connect(self.db_name)
+        self.conn_lock.acquire()
         cursor = self.conn.cursor()
         cursor.execute(query, params)
         result = cursor.fetchone()
+        self.conn_lock.release()
         return result
 
     def sql_select(self, query, params):
-        self.conn = sqlite3.connect(self.db_name)
+        self.conn_lock.acquire()
         cursor = self.conn.cursor()
         cursor.execute(query, params)
         result = cursor.fetchall()
+        self.conn_lock.release()
         return result
 
     def sql_execute(self, query, params):
-        self.conn = sqlite3.connect(self.db_name)
+        self.conn_lock.acquire()
         cursor = self.conn.cursor()
         cursor.execute(query, params)
         result = cursor.rowcount
         self.conn.commit()
+        self.conn_lock.release()
         return result
 
     def email_exists(self, email):
