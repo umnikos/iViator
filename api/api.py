@@ -4,13 +4,14 @@ import logging
 from logging.handlers import RotatingFileHandler
 from secrets import jwt_secret
 
-import database as db
+import database
 import jwt
 from flask import Flask, jsonify, redirect, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+db = database.DB()
 
 @app.route('/api/register', methods=['POST'])
 def register():

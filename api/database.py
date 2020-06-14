@@ -1,65 +1,65 @@
 import sqlite3
 import hashlib
 
-DB_NAME = 'database.sqlite3'
-
-conn = sqlite3.connect(DB_NAME)
-
-conn.cursor().execute('''
-CREATE TABLE IF NOT EXISTS `users` (
-    `uid` INTEGER PRIMARY KEY AUTOINCREMENT,
-    `email` TEXT NOT NULL UNIQUE,
-    `username` TEXT NOT NULL UNIQUE,
-    `password` TEXT NOT NULL
-)''')
-conn.commit()
-conn.close()
-
-def sql_select1(query, params):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    result = cursor.fetchone()
-    return result
-
-def sql_select(query, params):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    result = cursor.fetchall()
-    return result
-
-def sql_execute(query, params):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    result = cursor.rowcount
-    conn.commit()
-    return result
-
-def email_exists(email):
-    query = """SELECT email FROM users WHERE email = ?"""
-    result = sql_select1(query, (email,))
-    return bool(result)
-
-def username_exists(username):
-    query = """SELECT username FROM users WHERE username = ?"""
-    result = sql_select1(query, (username,))
-    return bool(result)
-
 def hash_password(password):
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
-def add_new_user(email, username, password):
-    query = """INSERT INTO users (email, username, password) VALUES (?,?,?)"""
-    sql_execute(query, (email, username,hash_password(password)))
+class DB:
+    def __init__(self, db_name='database.sqlite3'):
+        self.db_name = db_name
+        self.conn = sqlite3.connect(db_name)
+        self.conn.cursor().execute('''
+        CREATE TABLE IF NOT EXISTS `users` (
+            `uid` INTEGER PRIMARY KEY AUTOINCREMENT,
+            `email` TEXT NOT NULL UNIQUE,
+            `username` TEXT NOT NULL UNIQUE,
+            `password` TEXT NOT NULL
+        )''')
+        self.conn.commit()
+        self.conn.close()
 
-def check_credentials(email, password):
-    query = """SELECT email FROM users WHERE email = ? AND password = ?"""
-    result = sql_select1(query, (email,hash_password(password)))
-    return bool(result)
+    def sql_select1(self, query, params):
+        self.conn = sqlite3.connect(self.db_name)
+        cursor = self.conn.cursor()
+        cursor.execute(query, params)
+        result = cursor.fetchone()
+        return result
 
-def get_uid(email):
-    query = """SELECT uid FROM users WHERE email = ?"""
-    result = sql_select1(query, (email,))
-    return result[0]
+    def sql_select(self, query, params):
+        self.conn = sqlite3.connect(self.db_name)
+        cursor = self.conn.cursor()
+        cursor.execute(query, params)
+        result = cursor.fetchall()
+        return result
+
+    def sql_execute(self, query, params):
+        self.conn = sqlite3.connect(self.db_name)
+        cursor = self.conn.cursor()
+        cursor.execute(query, params)
+        result = cursor.rowcount
+        self.conn.commit()
+        return result
+
+    def email_exists(self, email):
+        query = """SELECT email FROM users WHERE email = ?"""
+        result = self.sql_select1(query, (email,))
+        return bool(result)
+
+    def username_exists(self, username):
+        query = """SELECT username FROM users WHERE username = ?"""
+        result = self.sql_select1(query, (username,))
+        return bool(result)
+
+    def add_new_user(self, email, username, password):
+        query = """INSERT INTO users (email, username, password) VALUES (?,?,?)"""
+        self.sql_execute(query, (email, username,hash_password(password)))
+
+    def check_credentials(self, email, password):
+        query = """SELECT email FROM users WHERE email = ? AND password = ?"""
+        result = self.sql_select1(query, (email,hash_password(password)))
+        return bool(result)
+
+    def get_uid(self, email):
+        query = """SELECT uid FROM users WHERE email = ?"""
+        result = self.sql_select1(query, (email,))
+        return result[0]
