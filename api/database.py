@@ -19,6 +19,8 @@ class DB:
         self.conn.cursor().execute('''
         CREATE TABLE IF NOT EXISTS flights (
             fid INTEGER PRIMARY KEY AUTOINCREMENT,
+            origin TEXT NOT NULL,
+            destination TEXT NOT NULL,
             status TEXT NOT NULL UNIQUE
         )''')
         self.conn.cursor().execute('''
@@ -79,3 +81,28 @@ class DB:
         query = """SELECT uid FROM users WHERE email = ?"""
         result = self.sql_select1(query, (email,))
         return result[0]
+
+    def add_new_flight(self, origin, destination):
+        query = """INSERT INTO flights (origin, destination, status) VALUES (?,?,?)"""
+        self.sql_execute(query, (origin, destination, "pending"))
+
+    def get_flight_information(self, fid):
+        query = """SELECT origin, destination, status FROM flights WHERE fid = ?"""
+        result = self.sql_select1(query, (fid))
+        return result
+
+    def change_flight_status(self, fid, status):
+        query = """UPDATE flights SET status = ? WHERE fid = ?"""
+        self.sql_execute(query, (status, fid))
+
+    def delete_flight_id(self, fid):
+        query = """DELETE FROM flights WHERE fid = ?"""
+        self.sql_execute(query, (fid))
+
+    def delete_flight_destination(self, destination):
+        query = """DELETE FROM flights WHERE destination = ?"""
+        self.sql_execute(query, (destination))
+
+    def delete_flight_origin(self, origin):
+        query = """DELETE FROM flights WHERE origin = ?"""
+        self.sql_execute(query, (origin))
