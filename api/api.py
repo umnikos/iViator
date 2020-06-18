@@ -20,6 +20,7 @@ def register():
     data = json.loads(request.data)
     username = data['username']
     password = data['password']
+    is_staff = data['is_staff']
 
     try:
         app.logger.debug("Registration attempt '%s'" % (username,))
@@ -36,7 +37,7 @@ def register():
             app.logger.debug("Registration for '%s' failed - password too long" % username)
             return jsonify({"success":False, "error_message":"password too long"}), 422
 
-        db.add_new_user(False, username, password)
+        db.add_new_user(is_staff, username, password)
         app.logger.info("Registered new user '%s'" % (username,))
 
         return jsonify({"success":True}), 201
@@ -51,6 +52,14 @@ def user_exists():
     username = data['username']
     app.logger.debug("Check if username '%s' exists" % username)
     return jsonify({"success":True, "response":db.username_exists(username)}), 200
+
+@app.route('/api/is_staff', methods=['GET'])
+def is_staff():
+    data = json.loads(request.data)
+    username = data['username']
+    app.logger.debug("Check if user '%s' is staff" % username)
+    uid = db.get_uid(username)
+    return jsonify({"success":True, "response":db.is_staff(uid)}), 200
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -96,20 +105,39 @@ def decode_jwt(token):
 
 ### FLIGHT BOOKING ###
 
+@jwt_handler
 @app.route('/api/flights', methods=['GET'])
-@jwt_guard
 def list_flights():
     token = request.headers['Authorization']
     uid = decode_jwt(token)
     flights = db.get_pending_flights()
     return jsonify({"success":True, "flights":flights}), 200
 
+@jwt_handler
 @app.route('/api/buy_ticket', methods=['POST'])
-@jwt_guard
 def buy_ticket(fid):
     token = request.headers['Authorization']
     uid = decode_jwt(token)
     db.add_new_ticket(fid, uid)
+    return jsonify({"success":True}), 200
+
+@jwt_handler
+@app.route('/api/create_flight', methods=['POST'])
+def create_flight(origin, destination):
+    db.add_new_flight(origin, destination)
+    return jsonify({"success":True}), 200
+
+@jwt_handler
+@app.route('/api/change_flight_status', methods=['POST'])
+def change_flight_status(fid, status):
+    db.channge_flight_status(fid, status)
+    return jsonify({"success":True}), 200
+
+@jwt_handler
+@app.route('/api/delete_flight', methods=['POST'])
+def delete_flight(fid):
+    db.delete_flight_id(fid)
+    return jsonify({"success":True}), 200
 
 ### MAIN ###
 
