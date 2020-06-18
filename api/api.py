@@ -59,7 +59,8 @@ def is_staff():
     username = data['username']
     app.logger.debug("Check if user '%s' is staff" % username)
     uid = db.get_uid(username)
-    return jsonify({"success":True, "response":db.is_staff(uid)}), 200
+    response = db.is_staff(uid)
+    return jsonify({"success":True, "response":response}), 200
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -115,7 +116,9 @@ def list_flights():
 
 @jwt_handler
 @app.route('/api/buy_ticket', methods=['POST'])
-def buy_ticket(fid):
+def buy_ticket():
+    data = json.loads(request.data)
+    fid = data['fid']
     token = request.headers['Authorization']
     uid = decode_jwt(token)
     db.add_new_ticket(fid, uid)
@@ -123,19 +126,27 @@ def buy_ticket(fid):
 
 @jwt_handler
 @app.route('/api/create_flight', methods=['POST'])
-def create_flight(origin, destination):
+def create_flight():
+    data = json.loads(request.data)
+    origin = data['origin']
+    destination = data['destination']
     db.add_new_flight(origin, destination)
     return jsonify({"success":True}), 200
 
 @jwt_handler
 @app.route('/api/change_flight_status', methods=['POST'])
-def change_flight_status(fid, status):
+def change_flight_status():
+    data = json.loads(request.data)
+    fid = data['fid']
+    status = data['status']
     db.channge_flight_status(fid, status)
     return jsonify({"success":True}), 200
 
 @jwt_handler
 @app.route('/api/delete_flight', methods=['POST'])
-def delete_flight(fid):
+def delete_flight():
+    data = json.loads(request.data)
+    fid = data['fid']
     db.delete_flight_id(fid)
     return jsonify({"success":True}), 200
 

@@ -69,11 +69,12 @@ def main_screen_logged_in():
     r = requests.get(api_url+"is_staff", json={'username':un})
     j = r.json()
     if(j['response']):
-        yield '1', 'Book a flight', choose_flight
-    else:
         yield '1', 'Create a flight', create_flight
         yield '2', 'Change flight status', change_flight_status
-        yield '1', 'Delete flight', delete_flight
+        yield '3', 'Delete flight', delete_flight
+    else:
+        yield '1', 'Book a flight', choose_flight
+    yield 'q', 'Quit', quit
 
 def choose_flight():
     yield '0', 'Go back', main_screen
@@ -84,15 +85,16 @@ def choose_flight():
 
 def buy_ticket(flight):
     def wrapper():
-        r = requests.post(api_url+"buy_ticket", json={'fid':flight.fid})
+        r = requests.post(api_url+"buy_ticket", json={'fid':flight[0]}, headers = {'Authorization':login_token})
         j = r.json()
         if j['success']:
-            print("Registration successful")
+            print("Purchase successful")
         else:
-            print("Registration failed: %s" % (j['error_message'],))
+            print("Purchase failed: %s" % (j['error_message'],))
         print()
+        return main_screen()
     return wrapper
-    
+
 def create_flight():
     origin = input("Origin: ")
     destination = input("Destination: ")

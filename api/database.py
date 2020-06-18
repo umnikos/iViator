@@ -80,7 +80,7 @@ class DB:
     def is_staff(self, uid):
         query = """SELECT staff FROM users WHERE uid = ?"""
         result = self.sql_select1(query, (uid,))
-        return result[0]
+        return bool(result[0])
 
     def add_new_flight(self, origin, destination):
         query = """INSERT INTO flights (origin, destination, status) VALUES (?,?,?)"""
