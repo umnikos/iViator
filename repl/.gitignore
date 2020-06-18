@@ -1,0 +1,6 @@
+__pycache__
+secrets.py
+*.sqlite3
+*.log
+.vscode
+.DS_Store
