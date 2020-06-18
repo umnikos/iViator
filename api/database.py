@@ -88,7 +88,7 @@ class DB:
 
     def get_flight_information(self, fid):
         query = """SELECT origin, destination, status FROM flights WHERE fid = ?"""
-        result = self.sql_select1(query, (fid))
+        result = self.sql_select1(query, (fid,))
         return result
 
     def change_flight_status(self, fid, status):
@@ -97,12 +97,45 @@ class DB:
 
     def delete_flight_id(self, fid):
         query = """DELETE FROM flights WHERE fid = ?"""
-        self.sql_execute(query, (fid))
+        self.sql_execute(query, (fid,))
 
     def delete_flight_destination(self, destination):
         query = """DELETE FROM flights WHERE destination = ?"""
-        self.sql_execute(query, (destination))
+        self.sql_execute(query, (destination,))
 
     def delete_flight_origin(self, origin):
         query = """DELETE FROM flights WHERE origin = ?"""
-        self.sql_execute(query, (origin))
+        self.sql_execute(query, (origin,))
+
+    def add_new_ticket(self, fid, uid):
+        query = """INSERT INTO tickets (fid, uid) VALUES (?,?)"""
+        self.sql_execute(query, (fid, uid))
+
+    def get_user_flight_id(self, uid)
+        query = """ SELECT fid FROM tickets WHERE uid = ?"""
+        result = self.sql_select1(query, (uid,))
+        return result[0]
+
+    def get_user_flight_destination(self, uid):
+        query = """ SELECT f.destination
+        FROM Tickets t
+        INNER JOIN Flights f ON f.fid = t.fid
+        WHERE t.uid = ?"""
+        result = self.sql_select1(query, (uid,))
+        return result[0]
+
+    def get_user_flight_origin(self, uid):
+        query = """ SELECT f.origin
+        FROM Tickets t
+        INNER JOIN Flights f ON f.fid = t.fid
+        WHERE t.uid = ?"""
+        result = self.sql_select1(query, (uid,))
+        return result[0]
+
+    def get_user_flight_count(self, uid):
+        query = """ SELECT COUNT(t.fid)
+        FROM users u
+        INNER JOIN tickets t ON t.uid = u.uid
+        WHERE u.uid = ?"""
+        result = self.sql_select1(query, (uid,))
+        return result[0]
