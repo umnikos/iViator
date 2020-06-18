@@ -78,6 +78,16 @@ def encode_jwt(uid):
         ).decode('utf-8')
     }), 200
 
+def jwt_handler(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"success":False, "error_message":"expired token"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"success":False, "error_message":"invalid token"}), 400
+    return wrapper
+
 def decode_jwt(token):
     payload = jwt.decode(token.encode('utf-8'), jwt_secret)
     return payload['sub']
