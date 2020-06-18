@@ -21,7 +21,7 @@ class DB:
             fid INTEGER PRIMARY KEY AUTOINCREMENT,
             origin TEXT NOT NULL,
             destination TEXT NOT NULL,
-            status TEXT NOT NULL UNIQUE
+            status TEXT NOT NULL
         )''')
         self.conn.cursor().execute('''
         CREATE TABLE IF NOT EXISTS tickets (
