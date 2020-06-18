@@ -16,6 +16,18 @@ class DB:
             `username` TEXT NOT NULL UNIQUE,
             `password` TEXT NOT NULL
         )''')
+        self.conn.cursor().execute('''
+        CREATE TABLE IF NOT EXISTS flights (
+            fid INTEGER PRIMARY KEY AUTOINCREMENT,
+            status TEXT NOT NULL UNIQUE
+        )''')
+        self.conn.cursor().execute('''
+        CREATE TABLE IF NOT EXISTS tickets (
+            fid INTEGER,
+            uid INTEGER,
+            FOREIGN KEY(fid) REFERENCES flights(fid),
+            FOREIGN KEY(uid) REFERENCES users(uid)
+        )''')
         self.conn.commit()
         self.conn_lock = threading.Lock()
 
