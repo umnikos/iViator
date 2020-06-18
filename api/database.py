@@ -86,6 +86,11 @@ class DB:
         query = """INSERT INTO flights (origin, destination, status) VALUES (?,?,?)"""
         self.sql_execute(query, (origin, destination, "pending"))
 
+    def get_pending_flights(self):
+        query = """SELECT fid, origin, destination FROM flights"""
+        result = self.sql_select(query, ())
+        return result
+
     def get_flight_information(self, fid):
         query = """SELECT origin, destination, status FROM flights WHERE fid = ?"""
         result = self.sql_select1(query, (fid,))

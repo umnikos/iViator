@@ -60,6 +60,16 @@ def register():
     return main_screen()
 
 def main_screen_logged_in():
-    yield '0', 'Not implemented', main_screen
+    yield '1', 'Book a flight', choose_flight
+
+def choose_flight():
+    yield '0', 'Go back', main_screen
+    r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
+    j = r.json();
+    def pick_flight(flight):
+        return main_screen
+    i = 1
+    for flight in j['flights']:
+        yield str(flight[0]), f"{flight[1]} - {flight[2]}", pick_flight(flight)
 
 repl(main_screen)

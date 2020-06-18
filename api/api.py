@@ -13,6 +13,8 @@ app = Flask(__name__)
 CORS(app)
 db = database.DB()
 
+### LOGIN & REGISTER ###
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = json.loads(request.data)
@@ -91,6 +93,17 @@ def jwt_handler(func):
 def decode_jwt(token):
     payload = jwt.decode(token.encode('utf-8'), jwt_secret)
     return payload['sub']
+
+### FLIGHT BOOKING ###
+
+@app.route('/api/flights', methods=['GET'])
+def list_flights():
+    token = request.headers['Authorization']
+    uid = decode_jwt(token)
+    flights = db.get_pending_flights()
+    return jsonify({"success":True, "flights":flights}), 200
+
+### MAIN ###
 
 if jwt_secret == "[temporary]":
     print("WARNING: Please replace the jwt secret in secrets.py to a real secret.")
