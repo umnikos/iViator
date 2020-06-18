@@ -20,7 +20,13 @@ def register():
     data = json.loads(request.data)
     username = data['username']
     password = data['password']
-    is_staff = data['is_staff']
+    try:
+        token = request.headers['Authorization']
+        uid = decode_jwt(token)
+        if db.is_staff(uid):
+            is_staff = data['is_staff']
+    except:
+        is_staff = False
 
     try:
         app.logger.debug("Registration attempt '%s'" % (username,))
@@ -53,15 +59,6 @@ def user_exists():
     app.logger.debug("Check if username '%s' exists" % username)
     return jsonify({"success":True, "response":db.username_exists(username)}), 200
 
-@app.route('/api/is_staff', methods=['GET'])
-def is_staff():
-    data = json.loads(request.data)
-    username = data['username']
-    app.logger.debug("Check if user '%s' is staff" % username)
-    uid = db.get_uid(username)
-    response = db.is_staff(uid)
-    return jsonify({"success":True, "response":response}), 200
-
 @app.route('/api/login', methods=['POST'])
 def login():
     data = json.loads(request.data)
@@ -82,6 +79,7 @@ def encode_jwt(uid):
     }
     return jsonify({
         "success": True,
+        "is_staff": db.is_staff(uid),
         "exp": '{}'.format(payload["exp"]),
         "token":jwt.encode(
             payload,
@@ -111,7 +109,18 @@ def decode_jwt(token):
 def list_flights():
     token = request.headers['Authorization']
     uid = decode_jwt(token)
-    flights = db.get_pending_flights()
+    if db.is_staff(uid):
+        flights = db.get_all_flights()
+    else:
+        flights = db.get_pending_flights()
+    return jsonify({"success":True, "flights":flights}), 200
+
+@jwt_handler
+@app.route('/api/my_flights', methods=['GET'])
+def my_flights():
+    token = request.headers['Authorization']
+    uid = decode_jwt(token)
+    flights = db.get_user_flights(uid)
     return jsonify({"success":True, "flights":flights}), 200
 
 @jwt_handler
@@ -139,7 +148,7 @@ def change_flight_status():
     data = json.loads(request.data)
     fid = data['fid']
     status = data['status']
-    db.channge_flight_status(fid, status)
+    db.change_flight_status(fid, status)
     return jsonify({"success":True}), 200
 
 @jwt_handler

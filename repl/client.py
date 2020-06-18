@@ -5,6 +5,7 @@ from datetime import datetime
 
 login_token_expire = None
 login_token = None
+is_staff = False
 api_url = "http://localhost:5000/api/"
 
 def quit():
@@ -28,52 +29,51 @@ def check_token_expired():
 
 def main_screen_not_logged_in():
     yield '1', 'Log in', log_in
-    yield '2', 'Register', register
+    yield '2', 'Register', register(False)
     yield 'q', 'Quit', quit
 
 def log_in():
     global login_token
     global login_token_expire
+    global username
+    global is_staff
     username = input("Username: ")
     password = input("Password: ")
     r = requests.post(api_url+"login", json={'username':username, 'password':password, })
     j = r.json()
     if j['success']:
-        global un
-        un = username
         print("Login successful")
         login_token = j['token']
         login_token_expire = datetime.strptime(j['exp'], '%Y-%m-%d %H:%M:%S.%f')
+        is_staff = j['is_staff']
     else:
         print("Login failed: %s" % (j['error_message'],))
     print()
     return main_screen()
 
-def register():
-    username = input("Username: ")
-    password = input("Password: ")
-    is_staff = input("Are you staff: ")
-    if(is_staff == "yes"):
-        r = requests.post(api_url+"register", json={'username':username, 'password':password, 'is_staff':True})
-    else:
-        r = requests.post(api_url+"register", json={'username':username, 'password':password, 'is_staff':False})
-    j = r.json()
-    if j['success']:
-        print("Registration successful")
-    else:
-        print("Registration failed: %s" % (j['error_message'],))
-    print()
-    return main_screen()
+def register(is_staff):
+    def wrapper():
+        username = input("Username: ")
+        password = input("Password: ")
+        r = requests.post(api_url+"register", json={'username':username, 'password':password, 'is_staff':is_staff})
+        j = r.json()
+        if j['success']:
+            print("Registration successful")
+        else:
+            print("Registration failed: %s" % (j['error_message'],))
+        print()
+        return main_screen()
+    return wrapper
 
 def main_screen_logged_in():
-    r = requests.get(api_url+"is_staff", json={'username':un})
-    j = r.json()
-    if(j['response']):
+    if(is_staff):
         yield '1', 'Create a flight', create_flight
         yield '2', 'Change flight status', change_flight_status
         yield '3', 'Delete flight', delete_flight
+        yield '4', 'Register staff', register(True)
     else:
         yield '1', 'Book a flight', choose_flight
+        yield '2', 'View booked flights', view_booked
     yield 'q', 'Quit', quit
 
 def choose_flight():
@@ -81,7 +81,7 @@ def choose_flight():
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
     j = r.json()
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} - {flight[2]}", buy_ticket(flight)
+        yield str(flight[0]), f"{flight[1]} -> {flight[2]}", buy_ticket(flight)
 
 def buy_ticket(flight):
     def wrapper():
@@ -94,6 +94,16 @@ def buy_ticket(flight):
         print()
         return main_screen()
     return wrapper
+
+def view_booked():
+    r = requests.get(api_url+"my_flights", headers = {'Authorization':login_token})
+    j = r.json()
+    print("Your booked flights:")
+    for flight in j['flights']:
+        print(f"{str(flight[0])} - {flight[1]} -> {flight[2]}")
+    input("Press enter to continue.")
+    print()
+    return main_screen()
 
 def create_flight():
     origin = input("Origin: ")
@@ -108,41 +118,48 @@ def create_flight():
     return main_screen()
 
 def change_flight_status():
-    status = input("Status: ")
     yield '0', 'Go back', main_screen
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
     j = r.json()
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} - {flight[2]}", edit_flight_status(flight, status)
+        yield str(flight[0]), f"{flight[1]} -> {flight[2]} ({flight[3]})", edit_flight_status(flight)
 
-def edit_flight_status(flight, status):
+def edit_flight_status(flight):
     def wrapper():
-        r = requests.post(api_url+"change_flight_status", json={'fid':flight.fid, 'status':status})
+        status = input("New status: ")
+        r = requests.post(api_url+"change_flight_status", json={'fid':flight[0], 'status':status})
         j = r.json()
         if j['success']:
             print("Edit successful")
         else:
             print("Edit failed: %s" % (j['error_message'],))
         print()
+        return main_screen()
     return wrapper
 
 def delete_flight():
-    status = input("Status: ")
     yield '0', 'Go back', main_screen
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
     j = r.json()
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} - {flight[2]}", remove_flight(flight)
+        yield str(flight[0]), f"{flight[1]} -> {flight[2]} ({flight[3]})", remove_flight(flight)
 
 def remove_flight(flight):
     def wrapper():
-        r = requests.post(api_url+"delete_flight", json={'fid':flight.fid})
+        r = requests.post(api_url+"delete_flight", json={'fid':flight[0]})
         j = r.json()
         if j['success']:
             print("Deletion successful")
         else:
             print("Deletion failed: %s" % (j['error_message'],))
         print()
+        return main_screen()
     return wrapper
 
-repl(main_screen)
+def handler():
+    print("An error occured!")
+    print("It could be caused by a connectivity issue or a server error.")
+    print()
+    return main_screen()
+
+repl(main_screen, handler)
