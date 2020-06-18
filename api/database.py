@@ -87,7 +87,7 @@ class DB:
         self.sql_execute(query, (origin, destination, "pending"))
 
     def get_pending_flights(self):
-        query = """SELECT fid, origin, destination FROM flights"""
+        query = """SELECT fid, origin, destination FROM flights WHERE status = 'pending'"""
         result = self.sql_select(query, ())
         return result
 

@@ -97,11 +97,19 @@ def decode_jwt(token):
 ### FLIGHT BOOKING ###
 
 @app.route('/api/flights', methods=['GET'])
+@jwt_guard
 def list_flights():
     token = request.headers['Authorization']
     uid = decode_jwt(token)
     flights = db.get_pending_flights()
     return jsonify({"success":True, "flights":flights}), 200
+
+@app.route('/api/buy_ticket', methods=['POST'])
+@jwt_guard
+def buy_ticket(fid):
+    token = request.headers['Authorization']
+    uid = decode_jwt(token)
+    db.add_new_ticket(fid, uid)
 
 ### MAIN ###
 

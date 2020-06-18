@@ -61,15 +61,26 @@ def register():
 
 def main_screen_logged_in():
     yield '1', 'Book a flight', choose_flight
+    yield '2', 'Buy a ticket', buy_ticket
 
 def choose_flight():
     yield '0', 'Go back', main_screen
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
-    j = r.json();
-    def pick_flight(flight):
-        return main_screen
-    i = 1
+    j = r.json()
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} - {flight[2]}", pick_flight(flight)
+        yield str(flight[0]), f"{flight[1]} - {flight[2]}", buy_ticket(flight)
+
+def buy_ticket(flight):
+    def wrapper():
+        r = requests.post(api_url+"buy_ticket", json={'fid':flight.fid})
+        j = r.json()
+        if j['success']:
+            print("Registration successful")
+        else:
+            print("Registration failed: %s" % (j['error_message'],))
+        print()
+    return wrapper
+    
+
 
 repl(main_screen)
