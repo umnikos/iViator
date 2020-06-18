@@ -70,7 +70,7 @@ def encode_jwt(uid):
     }
     return jsonify({
         "success": True,
-        "exp":payload["exp"],
+        "exp": '{}'.format(payload["exp"]),
         "token":jwt.encode(
             payload,
             jwt_secret,

@@ -15,11 +15,15 @@ def repl(state):
             i += 1
 
         while True:
-            choice = input("> ")
             try:
+                choice = input("> ")
                 chosen = letters.index(choice)
                 state = functions[chosen]
                 break
             except ValueError:
                 print("Unknown option.")
+            except EOFError:
+                return
+            except KeyboardInterrupt:
+                return
 
