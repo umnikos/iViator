@@ -12,9 +12,9 @@ class DB:
         self.conn.cursor().execute('''
         CREATE TABLE IF NOT EXISTS `users` (
             `uid` INTEGER PRIMARY KEY AUTOINCREMENT,
-            `email` TEXT NOT NULL UNIQUE,
             `username` TEXT NOT NULL UNIQUE,
-            `password` TEXT NOT NULL
+            `password` TEXT NOT NULL,
+            `staff` BOOLEAN NOT NULL
         )''')
         self.conn.cursor().execute('''
         CREATE TABLE IF NOT EXISTS flights (
@@ -58,28 +58,28 @@ class DB:
         self.conn_lock.release()
         return result
 
-    def email_exists(self, email):
-        query = """SELECT email FROM users WHERE email = ?"""
-        result = self.sql_select1(query, (email,))
-        return bool(result)
-
     def username_exists(self, username):
         query = """SELECT username FROM users WHERE username = ?"""
         result = self.sql_select1(query, (username,))
         return bool(result)
 
-    def add_new_user(self, email, username, password):
-        query = """INSERT INTO users (email, username, password) VALUES (?,?,?)"""
-        self.sql_execute(query, (email, username,hash_password(password)))
+    def add_new_user(self, staff, username, password):
+        query = """INSERT INTO users (staff, username, password) VALUES (?,?,?)"""
+        self.sql_execute(query, (staff, username,hash_password(password)))
 
-    def check_credentials(self, email, password):
-        query = """SELECT email FROM users WHERE email = ? AND password = ?"""
-        result = self.sql_select1(query, (email,hash_password(password)))
+    def check_credentials(self, username, password):
+        query = """SELECT username FROM users WHERE username = ? AND password = ?"""
+        result = self.sql_select1(query, (username,hash_password(password)))
         return bool(result)
 
-    def get_uid(self, email):
-        query = """SELECT uid FROM users WHERE email = ?"""
-        result = self.sql_select1(query, (email,))
+    def get_uid(self, username):
+        query = """SELECT uid FROM users WHERE username = ?"""
+        result = self.sql_select1(query, (username,))
+        return result[0]
+
+    def is_staff(self, uid):
+        query = """SELECT staff FROM users WHERE uid = ?"""
+        result = self.sql_select1(query, (uid,))
         return result[0]
 
     def add_new_flight(self, origin, destination):
