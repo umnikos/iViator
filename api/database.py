@@ -16,6 +16,20 @@ class DB:
             `username` TEXT NOT NULL UNIQUE,
             `password` TEXT NOT NULL
         )''')
+        self.conn.cursor().execute('''
+        CREATE TABLE IF NOT EXISTS flights (
+            fid INTEGER PRIMARY KEY AUTOINCREMENT,
+            origin TEXT NOT NULL,
+            destination TEXT NOT NULL,
+            status TEXT NOT NULL
+        )''')
+        self.conn.cursor().execute('''
+        CREATE TABLE IF NOT EXISTS tickets (
+            fid INTEGER,
+            uid INTEGER,
+            FOREIGN KEY(fid) REFERENCES flights(fid) ON DELETE CASCADE,
+            FOREIGN KEY(uid) REFERENCES users(uid) ON DELETE CASCADE
+        )''')
         self.conn.commit()
         self.conn_lock = threading.Lock()
 
@@ -66,4 +80,33 @@ class DB:
     def get_uid(self, email):
         query = """SELECT uid FROM users WHERE email = ?"""
         result = self.sql_select1(query, (email,))
+        return result[0]
+
+    def add_new_flight(self, origin, destination):
+        query = """INSERT INTO flights (origin, destination, status) VALUES (?,?,?)"""
+        self.sql_execute(query, (origin, destination, "pending"))
+
+    def get_flight_information(self, fid):
+        query = """SELECT origin, destination, status FROM flights WHERE fid = ?"""
+        result = self.sql_select1(query, (fid,))
+        return result
+
+    def change_flight_status(self, fid, status):
+        query = """UPDATE flights SET status = ? WHERE fid = ?"""
+        self.sql_execute(query, (status, fid))
+
+    def delete_flight_id(self, fid):
+        query = """DELETE FROM flights WHERE fid = ?"""
+        self.sql_execute(query, (fid,))
+
+    def add_new_ticket(self, fid, uid):
+        query = """INSERT INTO tickets (fid, uid) VALUES (?,?)"""
+        self.sql_execute(query, (fid, uid))
+
+    def get_user_flight_count(self, uid):
+        query = """ SELECT COUNT(t.fid)
+        FROM users u
+        INNER JOIN tickets t ON t.uid = u.uid
+        WHERE u.uid = ?"""
+        result = self.sql_select1(query, (uid,))
         return result[0]
