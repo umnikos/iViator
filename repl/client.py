@@ -80,8 +80,10 @@ def choose_flight():
     yield '0', 'Go back', main_screen
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
     j = r.json()
+    i = 1
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} -> {flight[2]}", buy_ticket(flight)
+        yield str(i), f"{flight[1]} -> {flight[2]}", buy_ticket(flight)
+        i += 1
 
 def buy_ticket(flight):
     def wrapper():
@@ -99,8 +101,10 @@ def view_booked():
     r = requests.get(api_url+"my_flights", headers = {'Authorization':login_token})
     j = r.json()
     print("Your booked flights:")
+    i = 1
     for flight in j['flights']:
-        print(f"{str(flight[0])} - {flight[1]} -> {flight[2]}")
+        print(f"{str(i)} - {flight[1]} -> {flight[2]}")
+        i += 1
     input("Press enter to continue.")
     print()
     return main_screen()
@@ -121,8 +125,10 @@ def change_flight_status():
     yield '0', 'Go back', main_screen
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
     j = r.json()
+    i = 1
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} -> {flight[2]} ({flight[3]})", edit_flight_status(flight)
+        yield str(i), f"{flight[1]} -> {flight[2]} ({flight[3]})", edit_flight_status(flight)
+        i += 1
 
 def edit_flight_status(flight):
     def wrapper():
@@ -141,8 +147,10 @@ def delete_flight():
     yield '0', 'Go back', main_screen
     r = requests.get(api_url+"flights", headers = {'Authorization':login_token})
     j = r.json()
+    i = 1
     for flight in j['flights']:
-        yield str(flight[0]), f"{flight[1]} -> {flight[2]} ({flight[3]})", remove_flight(flight)
+        yield str(i), f"{flight[1]} -> {flight[2]} ({flight[3]})", remove_flight(flight)
+        i += 1
 
 def remove_flight(flight):
     def wrapper():
