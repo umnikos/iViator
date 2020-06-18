@@ -27,8 +27,8 @@ class DB:
         CREATE TABLE IF NOT EXISTS tickets (
             fid INTEGER,
             uid INTEGER,
-            FOREIGN KEY(fid) REFERENCES flights(fid),
-            FOREIGN KEY(uid) REFERENCES users(uid)
+            FOREIGN KEY(fid) REFERENCES flights(fid) ON DELETE CASCADE,
+            FOREIGN KEY(uid) REFERENCES users(uid) ON DELETE CASCADE
         )''')
         self.conn.commit()
         self.conn_lock = threading.Lock()
@@ -99,38 +99,9 @@ class DB:
         query = """DELETE FROM flights WHERE fid = ?"""
         self.sql_execute(query, (fid,))
 
-    def delete_flight_destination(self, destination):
-        query = """DELETE FROM flights WHERE destination = ?"""
-        self.sql_execute(query, (destination,))
-
-    def delete_flight_origin(self, origin):
-        query = """DELETE FROM flights WHERE origin = ?"""
-        self.sql_execute(query, (origin,))
-
     def add_new_ticket(self, fid, uid):
         query = """INSERT INTO tickets (fid, uid) VALUES (?,?)"""
         self.sql_execute(query, (fid, uid))
-
-    def get_user_flight_id(self, uid)
-        query = """ SELECT fid FROM tickets WHERE uid = ?"""
-        result = self.sql_select1(query, (uid,))
-        return result[0]
-
-    def get_user_flight_destination(self, uid):
-        query = """ SELECT f.destination
-        FROM Tickets t
-        INNER JOIN Flights f ON f.fid = t.fid
-        WHERE t.uid = ?"""
-        result = self.sql_select1(query, (uid,))
-        return result[0]
-
-    def get_user_flight_origin(self, uid):
-        query = """ SELECT f.origin
-        FROM Tickets t
-        INNER JOIN Flights f ON f.fid = t.fid
-        WHERE t.uid = ?"""
-        result = self.sql_select1(query, (uid,))
-        return result[0]
 
     def get_user_flight_count(self, uid):
         query = """ SELECT COUNT(t.fid)
