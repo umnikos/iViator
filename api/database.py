@@ -80,11 +80,21 @@ class DB:
     def is_staff(self, uid):
         query = """SELECT staff FROM users WHERE uid = ?"""
         result = self.sql_select1(query, (uid,))
-        return result[0]
+        return bool(result[0])
 
     def add_new_flight(self, origin, destination):
         query = """INSERT INTO flights (origin, destination, status) VALUES (?,?,?)"""
         self.sql_execute(query, (origin, destination, "pending"))
+
+    def get_pending_flights(self):
+        query = """SELECT fid, origin, destination FROM flights WHERE status = 'pending'"""
+        result = self.sql_select(query, ())
+        return result
+
+    def get_all_flights(self):
+        query = """SELECT fid, origin, destination, status FROM flights"""
+        result = self.sql_select(query, ())
+        return result
 
     def get_flight_information(self, fid):
         query = """SELECT origin, destination, status FROM flights WHERE fid = ?"""
@@ -103,10 +113,10 @@ class DB:
         query = """INSERT INTO tickets (fid, uid) VALUES (?,?)"""
         self.sql_execute(query, (fid, uid))
 
-    def get_user_flight_count(self, uid):
-        query = """ SELECT COUNT(t.fid)
-        FROM users u
-        INNER JOIN tickets t ON t.uid = u.uid
-        WHERE u.uid = ?"""
-        result = self.sql_select1(query, (uid,))
-        return result[0]
+    def get_user_flights(self, uid):
+        query = """SELECT f.fid, origin, destination
+        FROM tickets t
+        INNER JOIN flights f ON t.uid = ? AND f.fid = t.fid
+        """
+        result = self.sql_select(query, (uid,))
+        return result

@@ -13,11 +13,20 @@ app = Flask(__name__)
 CORS(app)
 db = database.DB()
 
+### LOGIN & REGISTER ###
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = json.loads(request.data)
     username = data['username']
     password = data['password']
+    try:
+        token = request.headers['Authorization']
+        uid = decode_jwt(token)
+        if db.is_staff(uid):
+            is_staff = data['is_staff']
+    except:
+        is_staff = False
 
     try:
         app.logger.debug("Registration attempt '%s'" % (username,))
@@ -34,7 +43,7 @@ def register():
             app.logger.debug("Registration for '%s' failed - password too long" % username)
             return jsonify({"success":False, "error_message":"password too long"}), 422
 
-        db.add_new_user(False, username, password)
+        db.add_new_user(is_staff, username, password)
         app.logger.info("Registered new user '%s'" % (username,))
 
         return jsonify({"success":True}), 201
@@ -70,6 +79,7 @@ def encode_jwt(uid):
     }
     return jsonify({
         "success": True,
+        "is_staff": db.is_staff(uid),
         "exp": '{}'.format(payload["exp"]),
         "token":jwt.encode(
             payload,
@@ -78,9 +88,78 @@ def encode_jwt(uid):
         ).decode('utf-8')
     }), 200
 
+def jwt_handler(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"success":False, "error_message":"expired token"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"success":False, "error_message":"invalid token"}), 400
+    return wrapper
+
 def decode_jwt(token):
     payload = jwt.decode(token.encode('utf-8'), jwt_secret)
     return payload['sub']
+
+### FLIGHT BOOKING ###
+
+@jwt_handler
+@app.route('/api/flights', methods=['GET'])
+def list_flights():
+    token = request.headers['Authorization']
+    uid = decode_jwt(token)
+    if db.is_staff(uid):
+        flights = db.get_all_flights()
+    else:
+        flights = db.get_pending_flights()
+    return jsonify({"success":True, "flights":flights}), 200
+
+@jwt_handler
+@app.route('/api/my_flights', methods=['GET'])
+def my_flights():
+    token = request.headers['Authorization']
+    uid = decode_jwt(token)
+    flights = db.get_user_flights(uid)
+    return jsonify({"success":True, "flights":flights}), 200
+
+@jwt_handler
+@app.route('/api/buy_ticket', methods=['POST'])
+def buy_ticket():
+    data = json.loads(request.data)
+    fid = data['fid']
+    token = request.headers['Authorization']
+    uid = decode_jwt(token)
+    db.add_new_ticket(fid, uid)
+    return jsonify({"success":True}), 200
+
+@jwt_handler
+@app.route('/api/create_flight', methods=['POST'])
+def create_flight():
+    data = json.loads(request.data)
+    origin = data['origin']
+    destination = data['destination']
+    db.add_new_flight(origin, destination)
+    return jsonify({"success":True}), 200
+
+@jwt_handler
+@app.route('/api/change_flight_status', methods=['POST'])
+def change_flight_status():
+    data = json.loads(request.data)
+    fid = data['fid']
+    status = data['status']
+    db.change_flight_status(fid, status)
+    return jsonify({"success":True}), 200
+
+@jwt_handler
+@app.route('/api/delete_flight', methods=['POST'])
+def delete_flight():
+    data = json.loads(request.data)
+    fid = data['fid']
+    db.delete_flight_id(fid)
+    return jsonify({"success":True}), 200
+
+### MAIN ###
 
 if jwt_secret == "[temporary]":
     print("WARNING: Please replace the jwt secret in secrets.py to a real secret.")
