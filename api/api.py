@@ -1,3 +1,6 @@
+#!/usr/bin/env nix-shell
+#!nix-shell --pure -i python3 -p "python37.withPackages (pkgs: with python37Packages; [ flask flask-httpauth pyjwt flask-cors ])"
+
 import datetime
 import json
 import logging
